@@ -1,0 +1,82 @@
+ # Reference: <https://postmarketos.org/vendorkernel>
+ # Kernel config based on: arch/arm/configs/(CHANGEME!)
+
+
+pkgname=linux-samsung-j1xlte
+pkgver=3.10.108
+pkgrel=0
+pkgdesc="Samsung Galaxy J1 kernel fork"
+arch="armv7"
+_carch="arm"
+_flavor="samsung-j1xlte"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+  bash
+  bc
+  bison
+  devicepkg-dev
+  findutils
+  flex
+  openssl-dev
+  linux-headers
+  perl
+"
+
+# Source
+_repository="android_kernel_samsung_exynos3475"
+_commit="52bb119ad7fc0546f0bc3068895712281b7e3186"
+_config="config-$_flavor.$arch"
+source="
+  $pkgname-$_commit.tar.gz::https://github.com/lyceumstudent1335/$_repository/archive/$_commit.tar.gz
+  $_config
+  gcc8-fix-put-user.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+   default_prepare
+  . downstreamkernel_prepare
+}
+
+build() {
+  unset LDFLAGS
+  # local _myflags="-Wno-int-in-bool-context \
+  # -Wno-address-of-packed-member \
+  # -Wno-address \
+  # -Wno-stringop-truncation \
+  # -Wno-misleading-indentation \
+  # -Wno-array-compare \
+  # -Wno-attributes \
+  # -Wno-unused-variable \
+  # -Wno-dangling-pointer \
+  # -Wno-array-bounds \
+  # -Wno-frame-larger-than \
+  # -Wno-format-truncation \
+  # -Wno-int-to-pointer-cast \
+  # -Wno-sizeof-pointer-memaccess
+  # -Wno-tautological-compare \
+  # -Wno-maybe-uninitialized \
+  # -Wno-unused-function \
+  # -Wno-stringop-overflow \
+  # -Wno-format-overflow"
+  local _myflags="-Wall -Wno-error"
+  make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+    KCFLAGS="$_myflags" \
+    CFLAGS="$_myflags" \
+    LDFLAGS="--no-keep-memory --hash-size=31" \
+    KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+  downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+    "$_flavor" "$_outdir"
+}
+
+sha512sums="
+185f637f008edfa589ebe3b6d2276f4a40778641766c2f5fac72a887774805dd27c0a1a67520ae5ebac6daf659c795cb2811bb1c4e0f91c017ff126a78b1aaff  linux-samsung-j1xlte-52bb119ad7fc0546f0bc3068895712281b7e3186.tar.gz
+5db02a1d2c639de3549d969428e3b1e9719e44f3ee7bcc6d9c43c322f0b9ca0c37d0bf9b584e31439a6d96ea4283c631b0de6d83c9c787a560e51c225f49b658  config-samsung-j1xlte.armv7
+197d40a214ada87fcb2dfc0ae4911704b9a93354b75179cd6b4aadbb627a37ec262cf516921c84a8b1806809b70a7b440cdc8310a4a55fca5d2c0baa988e3967  gcc8-fix-put-user.patch
+"
